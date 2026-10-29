@@ -7,6 +7,23 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # Base temporaire, détruite à la fin du job, pour les migrations, le seed et pnpm test:db.
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: choofauto
+          POSTGRES_PASSWORD: choofauto
+          POSTGRES_DB: choofauto
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U choofauto"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://choofauto:choofauto@localhost:5432/choofauto?schema=public
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Version de pnpm lue dans le champ packageManager de package.json.
@@ -15,8 +32,14 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      # Génère aussi le client Prisma (script postinstall).
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm exec prisma migrate deploy
+      # Deux passages : le second ne doit créer aucun doublon, ce que vérifie pnpm test:db.
+      - run: pnpm db:seed
+      - run: pnpm db:seed
+      - run: pnpm test:db
       - run: pnpm build
