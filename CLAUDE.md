@@ -114,6 +114,7 @@ pnpm lint && pnpm typecheck && pnpm test
 4. Toute décision d'architecture s'écrit dans `docs/DECISIONS.md` (contexte, décision, conséquences).
 5. Ne touche jamais à l'infrastructure de production, aux secrets ou à la facturation sans instruction explicite.
 6. En cas de doute sur une règle métier, demande. Ne devine jamais un prix, un délai, une règle fiscale ou un nom de version.
+7. AGENTS.md est généré par Next.js ; en cas de contradiction avec CLAUDE.md, CLAUDE.md prime.
 
 ## Définition de « fini »
 

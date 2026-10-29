@@ -16,7 +16,7 @@ Critères : `pnpm dev`, `pnpm lint`, `pnpm typecheck` et `pnpm test` passent ; l
 
 ### 1.2 Base de données locale et chargement initial (3 h)
 
-Critères : `docker compose up -d` lance PostgreSQL avec pgvector ; la première migration crée toutes les tables du schéma ; `pnpm db:seed` charge la Tunisie, 19 marques, 30 modèles et 22 showrooms sans erreur, et peut être relancé sans créer de doublons.
+Critères : `docker compose up -d` lance PostgreSQL avec pgvector ; la première migration crée toutes les tables du schéma ; `pnpm db:seed` charge la Tunisie, 19 marques, 30 modèles et 22 showrooms sans erreur, et peut être relancé sans créer de doublons ; `prisma/seed.ts`, exclu temporairement à la tâche 1.1, est réintégré dans `pnpm typecheck` (`tsconfig.json`) et `pnpm lint` (`eslint.config.mjs`), et les deux passent.
 
 > Installe Prisma 6 (version épinglée) et le client. Utilise prisma/schema.prisma et prisma/seed.ts tels qu'ils sont dans le dépôt. Crée src/lib/db.ts avec un client Prisma unique. Génère la migration initiale nommée init, applique-la sur la base de docker-compose.yml, lance le seed deux fois de suite et vérifie qu'il n'y a pas de doublon. Ne modifie pas le schéma sans me le demander.
 

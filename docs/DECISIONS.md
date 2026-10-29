@@ -56,3 +56,9 @@ Chaque décision : contexte, décision, conséquences. On ajoute, on ne réécri
 
 - Décision : niveau N1 par défaut (l'agent propose dans `FactStaging`, un humain publie) ; niveau N2 pour un prix catalogue confirmé par deux sources indépendantes ; aucun relèvement de niveau sans un mois de mesures.
 - Conséquences : la qualité de la donnée publiée ne dépend jamais d'un seul appel au modèle.
+
+## 0011 - Versions de l'outillage et sécurité des dépendances
+
+- Contexte : un dépôt construit à la fois sur l'ordinateur du fondateur et dans GitHub Actions ; risque de paquets piégés publiés récemment sur le registre npm.
+- Décision : Node 24 et pnpm 12.16.1 (champ `packageManager`) partout ; installation en intégration continue avec `pnpm install --frozen-lockfile`. Dans `pnpm-workspace.yaml`, `minimumReleaseAge` refuse toute version publiée il y a moins de 7 jours, et `allowBuilds` liste les seuls paquets autorisés à exécuter un script à l'installation (esbuild, unrs-resolver). TypeScript reste en 6.0 et ESLint en 9 tant que les règles ESLint de Next.js ne prennent pas en charge TypeScript 7 et ESLint 10.
+- Conséquences : mêmes versions en local et en ligne ; une mise à jour urgente de sécurité publiée depuis moins de 7 jours demande une exception explicite (`minimumReleaseAgeExclude`). Pas de changement de version majeure de Node, pnpm, TypeScript ou ESLint sans décision écrite ici.
