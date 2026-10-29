@@ -1,1 +1,1 @@
-export {};
+export { findStaffByEmail } from "./staff";
