@@ -1,0 +1,14 @@
+# Base locale du pilote : PostgreSQL 16 avec l'extension pgvector
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: choofauto
+      POSTGRES_PASSWORD: choofauto
+      POSTGRES_DB: choofauto
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+volumes:
+  db-data:

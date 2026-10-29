@@ -1,0 +1,616 @@
+// choofauto - schéma de base de données du pilote (semaines 1 à 3)
+//
+// Règles :
+// - montants en unités mineures (millimes pour le dinar), type Int, toujours avec leur devise ;
+//   plafond d'un Int : environ 2,1 millions de dinars par montant, suffisant pour un prix de voiture ;
+// - dates en UTC ;
+// - observations en ajout seul : on n'écrase jamais, on ajoute une ligne datée ;
+// - aucune donnée personnelle d'usager : elle vit dans le coffre d'identité, hors de cette base ;
+// - tables préfixées par module : catalog_, partner_, obs_, ops_, rules_, analytics_, audit_.
+//
+// Hors du pilote des semaines 1 à 3 (à ajouter ensuite) : profils de besoins, sessions du conseiller,
+// demandes et consentements (références pseudonymes vers le coffre), avis, véhicules de « Mon garage »,
+// offres de financement, contenus.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ---------------------------------------------------------------- énumérations
+
+enum Segment {
+  CITY_CAR // citadine
+  SEDAN // berline
+  SUV_SMALL // SUV urbain
+  SUV_COMPACT // SUV compact
+  SUV_LARGE // grand SUV
+  PICKUP // pick-up
+  MPV // ludospace, monospace
+  VAN // utilitaire
+}
+
+enum Powertrain {
+  PETROL
+  DIESEL
+  HEV // hybride
+  PHEV // hybride rechargeable
+  BEV // électrique
+}
+
+enum PilotStatus {
+  CONFIRMED
+  TO_CONFIRM
+  TO_IDENTIFY
+}
+
+enum ProType {
+  DEALER // concessionnaire, agent
+  IMPORTER // importateur, distributeur officiel
+  BRAND
+  LEASING
+  BANK
+  INSURER
+  GARAGE
+  EXPERT
+  ACCOUNTANT
+}
+
+enum SourceType {
+  DEALER_SITE
+  BROCHURE
+  PRICE_LIST
+  PRESS
+  OFFICIAL_JOURNAL // JORT, textes officiels
+  COMPETITOR_SITE // automobile.tn et autres
+  PHONE_CALL
+  VISIT
+  WRITTEN_QUOTE
+  USER_QUOTE
+  PRO_PORTAL
+}
+
+enum ObservationMethod {
+  WRITTEN_QUOTE // devis écrit : confiance haute
+  VISIT // visite mystère : confiance haute
+  PHONE_CALL // appel : confiance moyenne
+  WEBSITE // site du concessionnaire : confiance basse
+  DOCUMENT // brochure, liste de prix : confiance basse à moyenne
+  PRO_PORTAL // déclaratif d'un professionnel : affiché à part
+}
+
+enum Confidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AvailabilityStatus {
+  IN_STOCK
+  ON_ORDER
+  WAITING_LIST
+  DISCONTINUED
+  NO_ANSWER
+}
+
+enum CompetitorStatus {
+  AVAILABLE
+  ON_ORDER
+  NOT_SHOWN
+  ABSENT
+}
+
+enum InterlocutorRole {
+  SALESPERSON
+  SALES_MANAGER
+  RECEPTION
+  OTHER
+}
+
+enum FactType {
+  PRICE
+  AVAILABILITY
+  SPEC
+  RULE
+}
+
+enum StagingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  SKIPPED
+}
+
+enum StaffRole {
+  FOUNDER
+  ADMIN
+  VERIFIER
+  INTERN
+}
+
+enum AgentRunStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+enum RuleDomain {
+  VAT
+  CONSUMPTION_TAX
+  CUSTOMS
+  REGISTRATION
+  VIGNETTE
+  FCR // franchise des Tunisiens résidant à l'étranger
+  POPULAR_CAR // voiture populaire
+  COMPANY_CAR
+  EV_INCENTIVE
+  OTHER
+}
+
+enum RuleStatus {
+  DRAFT
+  PROMULGATED
+  IN_FORCE
+  REPEALED
+}
+
+// ---------------------------------------------------------------- catalogue
+
+model Country {
+  code       String   @id @db.Char(2) // ISO 3166-1 alpha-2 : TN, MA, DZ, CI
+  name       String
+  currency   String   @db.Char(3) // ISO 4217 : TND
+  minorUnits Int      @default(3) // dinar : 3 décimales (millimes)
+  locales    String[] // ex. ["fr-TN", "ar-TN", "aeb-Arab-TN"]
+
+  versions Version[]
+  sites    ProSite[]
+  pros     Pro[]
+  rules    RegulatoryRule[]
+
+  @@map("catalog_countries")
+}
+
+model Brand {
+  id     String  @id @default(uuid()) @db.Uuid
+  name   String  @unique
+  slug   String  @unique
+  origin String? @db.Char(2) // pays d'origine de la marque
+
+  models Model[]
+  sites  ProSiteBrand[]
+
+  createdAt DateTime @default(now())
+
+  @@map("catalog_brands")
+}
+
+model Model {
+  id          String       @id @default(uuid()) @db.Uuid
+  brandId     String       @db.Uuid
+  brand       Brand        @relation(fields: [brandId], references: [id])
+  name        String
+  slug        String       @unique
+  segment     Segment
+  pilotRank   Int?         @unique // 1 à 30 dans le pilote
+  pilotStatus PilotStatus?
+  pilotReason String? // pourquoi ce modèle est dans le pilote, avec sa source
+
+  versions Version[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([brandId, name])
+  @@map("catalog_models")
+}
+
+model Version {
+  id           String      @id @default(uuid()) @db.Uuid
+  modelId      String      @db.Uuid
+  model        Model       @relation(fields: [modelId], references: [id])
+  countryCode  String      @db.Char(2)
+  country      Country     @relation(fields: [countryCode], references: [code])
+  name         String // nom commercial de la version dans ce pays
+  powertrain   Powertrain?
+  isPopularCar Boolean     @default(false) // régime de la voiture populaire
+  specs        Json        @default("{}") // fiche technique ; chaque valeur porte sa source
+  isTracked    Boolean     @default(false) // suivie dans les relevés du pilote
+  isActive     Boolean     @default(true)
+
+  importerId String? @db.Uuid
+  importer   Pro?    @relation(fields: [importerId], references: [id])
+
+  embedding Unsupported("vector(1024)")? // BGE-M3, recherche du conseiller ; lecture et écriture en SQL brut
+
+  prices       PricePoint[]
+  availability AvailabilityObservation[]
+  competitor   CompetitorObservation[]
+  freshness    FreshnessClock[]
+  tasks        VerificationTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([modelId, countryCode, name])
+  @@index([countryCode])
+  @@map("catalog_versions")
+}
+
+// ---------------------------------------------------------------- professionnels et showrooms
+
+model Pro {
+  id          String  @id @default(uuid()) @db.Uuid
+  type        ProType
+  name        String
+  countryCode String  @db.Char(2)
+  country     Country @relation(fields: [countryCode], references: [code])
+
+  sites            ProSite[]
+  importedVersions Version[]
+
+  createdAt DateTime @default(now())
+
+  @@map("partner_pros")
+}
+
+model ProSite {
+  id            String  @id @default(uuid()) @db.Uuid
+  proId         String? @db.Uuid // organisation, si connue
+  pro           Pro?    @relation(fields: [proId], references: [id])
+  countryCode   String  @db.Char(2)
+  country       Country @relation(fields: [countryCode], references: [code])
+  name          String // enseigne telle qu'elle se présente
+  address       String?
+  area          String? // pôle de visite : Charguia, Ben Arous, La Goulette…
+  latitude      Float?
+  longitude     Float?
+  googlePlaceId String?
+  phone         String? // numéro professionnel du showroom
+  openingHours  String?
+  isActive      Boolean @default(true)
+
+  brands       ProSiteBrand[]
+  fieldChecks  FieldCheck[]
+  prices       PricePoint[]
+  availability AvailabilityObservation[]
+  freshness    FreshnessClock[]
+  tasks        VerificationTask[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([countryCode, area])
+  @@map("partner_sites")
+}
+
+model ProSiteBrand {
+  siteId  String  @db.Uuid
+  site    ProSite @relation(fields: [siteId], references: [id])
+  brandId String  @db.Uuid
+  brand   Brand   @relation(fields: [brandId], references: [id])
+
+  @@id([siteId, brandId])
+  @@map("partner_site_brands")
+}
+
+// ---------------------------------------------------------------- sources et documents
+
+model Source {
+  id          String     @id @default(uuid()) @db.Uuid
+  type        SourceType
+  name        String
+  url         String?
+  countryCode String?    @db.Char(2)
+  reliability Float? // apprise au fil des contrôles, de 0 à 1
+
+  documents Document[]
+
+  createdAt DateTime @default(now())
+
+  @@map("ops_sources")
+}
+
+model Document {
+  id            String   @id @default(uuid()) @db.Uuid
+  sourceId      String   @db.Uuid
+  source        Source   @relation(fields: [sourceId], references: [id])
+  storagePath   String // chemin dans Cloud Storage
+  mimeType      String
+  sha256        String   @unique
+  extractedText String?
+  fetchedAt     DateTime @default(now())
+
+  prices  PricePoint[]
+  staging FactStaging[]
+
+  @@map("ops_documents")
+}
+
+// ---------------------------------------------------------------- relevés et observations (ajout seul)
+
+model FieldCheck {
+  id               String            @id @default(uuid()) @db.Uuid
+  checkedAt        DateTime // date et heure du relevé
+  method           ObservationMethod
+  siteId           String            @db.Uuid
+  site             ProSite           @relation(fields: [siteId], references: [id])
+  observerId       String            @db.Uuid
+  observer         StaffUser         @relation(fields: [observerId], references: [id])
+  interlocutorRole InterlocutorRole? // jamais le nom de l'interlocuteur
+  answered         Boolean           @default(true)
+  durationMinutes  Int?
+  notes            String?
+
+  prices       PricePoint[]
+  availability AvailabilityObservation[]
+  task         VerificationTask?
+
+  createdAt DateTime @default(now())
+
+  @@index([siteId, checkedAt])
+  @@map("obs_field_checks")
+}
+
+model PricePoint {
+  id                   String            @id @default(uuid()) @db.Uuid
+  versionId            String            @db.Uuid
+  version              Version           @relation(fields: [versionId], references: [id])
+  siteId               String?           @db.Uuid
+  site                 ProSite?          @relation(fields: [siteId], references: [id])
+  fieldCheckId         String?           @db.Uuid
+  fieldCheck           FieldCheck?       @relation(fields: [fieldCheckId], references: [id])
+  documentId           String?           @db.Uuid
+  document             Document?         @relation(fields: [documentId], references: [id])
+  amountMinor          Int // prix TTC annoncé, en millimes
+  currency             String            @db.Char(3)
+  includesRegistration Boolean? // carte grise incluse
+  extraFeesMinor       Int?
+  offerText            String?
+  offerEndsAt          DateTime?
+  observedAt           DateTime
+  method               ObservationMethod
+  confidence           Confidence
+
+  createdAt DateTime @default(now())
+
+  @@index([versionId, observedAt])
+  @@map("obs_price_points")
+}
+
+model AvailabilityObservation {
+  id               String             @id @default(uuid()) @db.Uuid
+  versionId        String             @db.Uuid
+  version          Version            @relation(fields: [versionId], references: [id])
+  siteId           String?            @db.Uuid
+  site             ProSite?           @relation(fields: [siteId], references: [id])
+  fieldCheckId     String?            @db.Uuid
+  fieldCheck       FieldCheck?        @relation(fields: [fieldCheckId], references: [id])
+  status           AvailabilityStatus
+  delayWeeks       Int?
+  colors           String[]
+  trims            String[]
+  financingMention String? // financement évoqué par le vendeur
+  declaredByPro    Boolean            @default(false) // déclaratif d'un professionnel, affiché à part
+  observedAt       DateTime
+  method           ObservationMethod
+  confidence       Confidence
+
+  createdAt DateTime @default(now())
+
+  @@index([versionId, siteId, observedAt])
+  @@map("obs_availability")
+}
+
+model CompetitorObservation {
+  id         String           @id @default(uuid()) @db.Uuid
+  competitor String // ex. "automobile.tn"
+  url        String?
+  versionId  String           @db.Uuid
+  version    Version          @relation(fields: [versionId], references: [id])
+  priceMinor Int?
+  status     CompetitorStatus
+  observedAt DateTime
+  observerId String?          @db.Uuid
+  observer   StaffUser?       @relation(fields: [observerId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([versionId, observedAt])
+  @@map("obs_competitor")
+}
+
+// ---------------------------------------------------------------- fraîcheur, tâches, temps
+
+model FreshnessClock {
+  id             String    @id @default(uuid()) @db.Uuid
+  factType       FactType
+  versionId      String    @db.Uuid
+  version        Version   @relation(fields: [versionId], references: [id])
+  siteId         String?   @db.Uuid // null : fait au niveau du pays (ex. prix catalogue)
+  site           ProSite?  @relation(fields: [siteId], references: [id])
+  lastVerifiedAt DateTime?
+  halfLifeDays   Float // prix catalogue 30, stock et délai 7
+  confidence     Float // de 0 à 1, décroît avec le temps
+  nextCheckAt    DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([factType, versionId, siteId]) // attention : PostgreSQL traite les siteId nuls comme distincts
+  @@index([nextCheckAt])
+  @@map("ops_freshness")
+}
+
+model VerificationTask {
+  id           String            @id @default(uuid()) @db.Uuid
+  factType     FactType
+  method       ObservationMethod
+  versionId    String?           @db.Uuid
+  version      Version?          @relation(fields: [versionId], references: [id])
+  siteId       String?           @db.Uuid
+  site         ProSite?          @relation(fields: [siteId], references: [id])
+  dueAt        DateTime
+  priority     Int               @default(0)
+  status       TaskStatus        @default(TODO)
+  assigneeId   String?           @db.Uuid
+  assignee     StaffUser?        @relation(fields: [assigneeId], references: [id])
+  fieldCheckId String?           @unique @db.Uuid
+  fieldCheck   FieldCheck?       @relation(fields: [fieldCheckId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([status, dueAt])
+  @@map("ops_verification_tasks")
+}
+
+model TimeEntry {
+  id       String    @id @default(uuid()) @db.Uuid
+  staffId  String    @db.Uuid
+  staff    StaffUser @relation(fields: [staffId], references: [id])
+  date     DateTime  @db.Date
+  minutes  Int
+  activity String // appels, visites, saisie, arbitrage, développement
+
+  createdAt DateTime @default(now())
+
+  @@index([date])
+  @@map("ops_time_entries")
+}
+
+model StaffUser {
+  id     String    @id @default(uuid()) @db.Uuid
+  email  String    @unique // adresse de connexion Google, sur liste blanche
+  name   String
+  role   StaffRole
+  active Boolean   @default(true)
+
+  fieldChecks   FieldCheck[]
+  competitorObs CompetitorObservation[]
+  tasks         VerificationTask[]
+  timeEntries   TimeEntry[]
+  reviewedFacts FactStaging[]
+
+  createdAt DateTime @default(now())
+
+  @@map("ops_staff_users")
+}
+
+model Setting {
+  key   String @id // ex. "hourly_cost_minor.founder", "llm.monthly_budget_usd"
+  value Json
+
+  updatedAt DateTime @updatedAt
+
+  @@map("ops_settings")
+}
+
+// ---------------------------------------------------------------- agents
+
+model AgentRun {
+  id           String         @id @default(uuid()) @db.Uuid
+  agent        String // source-watcher, extractor, reconciler, regulatory-watcher, quality-auditor
+  status       AgentRunStatus @default(RUNNING)
+  provider     String? // anthropic, aiforge
+  model        String?
+  inputTokens  Int            @default(0)
+  outputTokens Int            @default(0)
+  costMicroUsd Int            @default(0)
+  plan         Json?
+  error        String?
+
+  staging FactStaging[]
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+
+  @@index([agent, startedAt])
+  @@map("ops_agent_runs")
+}
+
+model FactStaging {
+  id              String        @id @default(uuid()) @db.Uuid
+  factType        FactType
+  versionId       String?       @db.Uuid // référence simple, vérifiée à la publication
+  siteId          String?       @db.Uuid
+  payload         Json // le fait proposé, au format de la table cible
+  citations       Json // [{ documentId, page, excerpt }]
+  confidence      Confidence
+  status          StagingStatus @default(PENDING)
+  agentRunId      String?       @db.Uuid
+  agentRun        AgentRun?     @relation(fields: [agentRunId], references: [id])
+  documentId      String?       @db.Uuid
+  document        Document?     @relation(fields: [documentId], references: [id])
+  reviewedById    String?       @db.Uuid
+  reviewedBy      StaffUser?    @relation(fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([status, factType])
+  @@map("ops_fact_staging")
+}
+
+// ---------------------------------------------------------------- règles fiscales et réglementaires
+
+model RegulatoryRule {
+  id            String     @id @default(uuid()) @db.Uuid
+  countryCode   String     @db.Char(2)
+  country       Country    @relation(fields: [countryCode], references: [code])
+  domain        RuleDomain
+  key           String // identifiant stable, ex. "vat.passenger_car.standard"
+  params        Json // taux, plafonds, conditions
+  effectiveFrom DateTime   @db.Date
+  effectiveTo   DateTime?  @db.Date
+  status        RuleStatus
+  sourceRef     String // texte, article, référence au JORT
+  sourceUrl     String?
+  validatedBy   String? // cabinet validateur
+  validatedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([countryCode, domain, key, effectiveFrom])
+  @@map("rules_regulatory")
+}
+
+// ---------------------------------------------------------------- événements et audit
+
+model Event {
+  id          BigInt   @id @default(autoincrement())
+  name        String // recherche_effectuee, fiche_vue, releve_saisi…
+  subjectId   String? // identifiant pseudonyme, jamais un téléphone ni un nom
+  countryCode String?  @db.Char(2)
+  props       Json     @default("{}")
+  occurredAt  DateTime @default(now())
+
+  @@index([name, occurredAt])
+  @@map("analytics_events")
+}
+
+model AuditLog {
+  id       BigInt   @id @default(autoincrement())
+  actorId  String?  @db.Uuid // membre du personnel
+  action   String
+  entity   String
+  entityId String
+  before   Json?
+  after    Json?
+  at       DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@map("audit_log")
+}
