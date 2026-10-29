@@ -102,6 +102,8 @@ pnpm db:seed                charger le pays, les marques, les 30 modèles et les
 pnpm lint && pnpm typecheck && pnpm test
 ```
 
+Couper tout VPN d’entreprise avant de lancer pnpm dev : il bloque les appels de Node.js vers Google.
+
 ## Façon de travailler
 
 1. Une tâche du plan à la fois, sur une branche à son nom. Lis ses critères d'acceptation avant d'écrire du code.
