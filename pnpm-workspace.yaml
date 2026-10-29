@@ -1,0 +1,7 @@
+# Sécurité des dépendances : refuser toute version publiée il y a moins de 7 jours (en minutes).
+minimumReleaseAge: 10080
+
+# Seuls ces paquets peuvent exécuter un script à l'installation.
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true

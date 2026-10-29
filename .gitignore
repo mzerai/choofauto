@@ -5,3 +5,7 @@ node_modules/
 *.tfstate
 *.tfstate.*
 .terraform/
+
+# Next.js et TypeScript
+next-env.d.ts
+*.tsbuildinfo
