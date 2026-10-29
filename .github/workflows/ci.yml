@@ -24,6 +24,10 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://choofauto:choofauto@localhost:5432/choofauto?schema=public
+      # Adresses fictives (domaine réservé example.com) : les vraies ne quittent jamais .env.local.
+      STAFF_EMAIL_ALLOWLIST: test.fondateur@example.com,test.cofondatrice@example.com
+      # Valeur d'essai pour la construction, sans usage réel.
+      AUTH_SECRET: ci-only-not-a-real-secret
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Version de pnpm lue dans le champ packageManager de package.json.

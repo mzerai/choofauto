@@ -4,6 +4,7 @@
 // Les versions ne sont pas créées ici : le fondateur les nomme dans le back-office le premier jour du test.
 
 import { PrismaClient, Segment, PilotStatus, StaffRole } from "@prisma/client";
+import { parseAllowlist } from "../src/lib/auth-access";
 
 const prisma = new PrismaClient();
 
@@ -113,6 +114,12 @@ const sites: SiteSeed[] = [
 ];
 
 async function main(): Promise<void> {
+  // Lue dans .env.local en local (option --env-file-if-exists du script db:seed), dans l'environnement en ligne.
+  const staffEmails = parseAllowlist(process.env.STAFF_EMAIL_ALLOWLIST);
+  if (staffEmails.length === 0) {
+    throw new Error("STAFF_EMAIL_ALLOWLIST est vide : saisissez les adresses du personnel dans .env.local.");
+  }
+
   await prisma.country.upsert({
     where: { code: "TN" },
     update: {},
@@ -179,13 +186,14 @@ async function main(): Promise<void> {
     }
   }
 
-  // Comptes du personnel : remplacer par les vraies adresses avant le premier lancement.
-  const staff = [
-    { email: "fondateur@choofauto.tn", name: "Fondateur", role: StaffRole.FOUNDER },
-    { email: "cofondatrice@choofauto.tn", name: "Cofondatrice", role: StaffRole.FOUNDER },
-  ];
-  for (const u of staff) {
-    await prisma.staffUser.upsert({ where: { email: u.email }, update: {}, create: u });
+  // Comptes du personnel : une adresse de STAFF_EMAIL_ALLOWLIST, un fondateur. Les vraies adresses
+  // ne sont jamais écrites dans le code ; un compte existant n'est pas modifié (rôle, nom, actif).
+  for (const email of staffEmails) {
+    await prisma.staffUser.upsert({
+      where: { email },
+      update: {},
+      create: { email, name: email.split("@")[0] ?? email, role: StaffRole.FOUNDER },
+    });
   }
 
   // Réglages : coûts horaires en millimes, à saisir par le fondateur (0 tant qu'ils ne sont pas connus).
@@ -200,7 +208,9 @@ async function main(): Promise<void> {
     await prisma.setting.upsert({ where: { key: s.key }, update: {}, create: { key: s.key, value: s.value } });
   }
 
-  console.log(`Chargé : ${brands.length} marques, ${models.length} modèles, ${sites.length} showrooms.`);
+  console.log(
+    `Chargé : ${brands.length} marques, ${models.length} modèles, ${sites.length} showrooms, ${staffEmails.length} comptes du personnel.`,
+  );
 }
 
 main()
