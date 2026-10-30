@@ -7,3 +7,12 @@ export async function findStaffByEmail(email: string) {
     select: { id: true, role: true, active: true },
   });
 }
+
+// Rôle et état actuels d'un membre du personnel, relus en base à chaque écriture :
+// le jeton de session peut dater de plusieurs heures.
+export async function findStaffById(id: string) {
+  return db.staffUser.findUnique({
+    where: { id },
+    select: { id: true, role: true, active: true },
+  });
+}

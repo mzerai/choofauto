@@ -1,1 +1,1 @@
-export { findStaffByEmail } from "./staff";
+export { findStaffByEmail, findStaffById } from "./staff";

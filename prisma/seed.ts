@@ -147,7 +147,8 @@ async function main(): Promise<void> {
     if (!brandId) throw new Error(`Marque inconnue : ${m.brand}`);
     await prisma.model.upsert({
       where: { slug: m.slug },
-      update: { segment: m.segment, pilotRank: m.rank, pilotStatus: m.status, pilotReason: m.reason },
+      // Le nom et le statut se corrigent dans le back-office : le seed ne les fixe qu'à la création.
+      update: { segment: m.segment, pilotRank: m.rank, pilotReason: m.reason },
       create: {
         brandId,
         name: m.name,

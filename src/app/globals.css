@@ -1,0 +1,330 @@
+/* choofauto - styles communs, sans bibliothèque.
+   Thème Nuit par défaut (marque), thème Jour si le système le demande.
+   Propriétés logiques (inline, block) pour que l'arabe et la derja s'affichent de droite à gauche. */
+
+:root {
+  color-scheme: dark;
+  --bg: #0b1626;
+  --bg-deep: #060b14;
+  --surface: #0f2a47;
+  --border: #23446a;
+  --text: #f1f5f9;
+  --muted: #a5b4c8;
+  --accent: #ff6a1f; /* éléments graphiques */
+  --accent-text: #ff8a4c; /* texte orange sur fond nuit */
+  --on-accent: #060b14;
+  --ok: #4ade80;
+  --error: #fca5a5;
+  --radius: 10px;
+  --tap: 44px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg: #f8fafc;
+    --bg-deep: #ffffff;
+    --surface: #ffffff;
+    --border: #cbd5e1;
+    --text: #0f2a47;
+    --muted: #475569;
+    --accent: #c2410c; /* #EA580C n'atteint pas 4,5:1 avec du blanc : boutons en #C2410C */
+    --accent-text: #c2410c;
+    --on-accent: #ffffff;
+    --ok: #15803d;
+    --error: #b91c1c;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(var(--bg), var(--bg-deep)) fixed;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--accent-text);
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-block: 0.5rem 1rem;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.page {
+  max-inline-size: 48rem;
+  margin-inline: auto;
+  padding: 1rem;
+  /* Espace sous le contenu : le bouton flottant des outils de Next.js (en développement) ne
+     recouvre jamais le dernier lien de la page. */
+  padding-block-end: 5rem;
+}
+
+/* ---------------------------------------------------------- commandes */
+
+button,
+input,
+select {
+  font: inherit;
+  min-block-size: var(--tap);
+  border-radius: var(--radius);
+}
+
+button {
+  padding-inline: 1rem;
+  border: none;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button:disabled,
+fieldset:disabled button {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+input:not([type="checkbox"]),
+select {
+  inline-size: 100%;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--bg-deep);
+  color: var(--text);
+}
+
+input[type="checkbox"] {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  min-block-size: 0;
+  accent-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: contents;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  min-block-size: var(--tap);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-block-start: 0.75rem;
+}
+
+.msg {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+}
+
+.msg-ok {
+  color: var(--ok);
+}
+
+.msg-error {
+  color: var(--error);
+}
+
+.notice {
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+}
+
+.meta {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---------------------------------------------------------- navigation */
+
+.nav {
+  list-style: none;
+  padding: 0;
+  margin-block: 1rem;
+}
+
+.nav-link,
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap);
+}
+
+.nav-link {
+  padding-inline: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------- catalogue */
+
+.models {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.card > details {
+  padding-inline: 0.75rem;
+}
+
+.card > details[open] {
+  /* Assez d'espace sous les liens du bas de la carte pour les faire défiler au-dessus du
+     bouton flottant des outils de Next.js, sur mobile. */
+  padding-block-end: 4rem;
+}
+
+summary {
+  min-block-size: var(--tap);
+  cursor: pointer;
+}
+
+.card > details > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-block: 0.5rem;
+  list-style: none;
+}
+
+.card > details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rank {
+  flex: none;
+  inline-size: 2rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.model-title {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-block: 0.25rem;
+}
+
+.badge {
+  flex: none;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.status-CONFIRMED {
+  color: var(--ok);
+  border-color: currentColor;
+}
+
+.status-TO_CONFIRM {
+  color: var(--accent-text);
+  border-color: currentColor;
+}
+
+.versions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.version {
+  padding-block: 0.75rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.version.inactive > :first-child {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
+}
+
+.row-actions > details {
+  flex-basis: 100%;
+}
+
+details.sub > summary {
+  display: flex;
+  align-items: center;
+  color: var(--accent-text);
+}
+
+.add-version {
+  margin-block-start: 1rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--border);
+}
