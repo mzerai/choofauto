@@ -41,7 +41,7 @@ Les documents de référence (spécification, protocole du test de la donnée, m
 
 Périmètre : un seul produit, choofauto, en Tunisie. Aucune abstraction générique pour un autre produit ou un autre pays ; on ne généralise qu'à partir de trois cas réels. Si un invariant dégrade une fonctionnalité visible par l'usager, la fonctionnalité gagne et l'exception est consignée dans docs/DECISIONS.md.
 
-F1. Identifiants et montants. Toute clé primaire est un UUID, en version 7 pour les journaux et les nouvelles tables ; aucun compteur séquentiel. Tout montant est un entier dans la plus petite unité de sa devise (millimes), accompagné d'une colonne currency (ISO 4217) ; jamais de flottant ni de décimal ; formatage par src/lib/money.ts uniquement.
+F1. Identifiants et montants. Toute clé primaire est un UUID, en version 7 pour les journaux et les nouvelles tables ; aucun compteur séquentiel. Tout montant est un entier dans la plus petite unité de sa devise (millimes), accompagné d'une colonne currency (ISO 4217) ; jamais de flottant ni de décimal ; formatage par src/lib/money.ts uniquement. Les identifiants sont fabriqués par l'application ; tout programme qui écrit en base sans passer par Prisma doit fournir lui-même un UUID v7. Quand la base passera à PostgreSQL 18, qui sait fabriquer des UUID v7, on ajoutera une valeur par défaut côté base.
 
 F2. Données personnelles des usagers. Aucun compte usager avant la première demande envoyée à un professionnel. Les données identifiantes des usagers (nom, téléphone, e-mail, adresse) ne vivent que dans le coffre d'identité hébergé en Tunisie ; l'application ne manipule qu'un identifiant pseudonyme. Chaque accès au coffre déclare une finalité, et le consentement est enregistré par finalité avec la version du texte accepté. Hors champ : les adresses de connexion du personnel (StaffUser) et les coordonnées professionnelles des showrooms (ProSite).
 
@@ -120,7 +120,7 @@ pnpm lint && pnpm typecheck && pnpm test
 
 Couper tout VPN d’entreprise avant de lancer pnpm dev : il bloque les appels de Node.js vers Google.
 
-Arrêter pnpm dev et Prisma Studio avant toute migration.
+Avant toute migration : pnpm stop.
 
 ## Façon de travailler
 

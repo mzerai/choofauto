@@ -7,7 +7,8 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "dev": "prisma generate && next dev",
+    "dev": "tsx scripts/predev.ts && prisma generate && next dev -p 3000",
+    "stop": "tsx scripts/stop.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
