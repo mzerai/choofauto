@@ -120,6 +120,8 @@ pnpm lint && pnpm typecheck && pnpm test
 
 Couper tout VPN d’entreprise avant de lancer pnpm dev : il bloque les appels de Node.js vers Google.
 
+Arrêter pnpm dev et Prisma Studio avant toute migration.
+
 ## Façon de travailler
 
 1. Une tâche du plan à la fois, sur une branche à son nom. Lis ses critères d'acceptation avant d'écrire du code.
