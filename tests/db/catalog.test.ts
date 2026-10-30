@@ -10,7 +10,8 @@ import {
   setVersionTracked,
 } from "@/modules/catalog";
 
-// Comptes fictifs et versions de test sur un modèle du seed, supprimés à la fin.
+// Comptes fictifs et versions de test sur un modèle du seed, dans la base de test recréée à chaque
+// lancement de pnpm test:db : rien à effacer, l'audit est en ajout seul.
 const ADMIN_EMAIL = "test.catalogue.admin@example.com";
 const VERIFIER_EMAIL = "test.catalogue.verif@example.com";
 const PREFIX = "Test catalogue";
@@ -19,22 +20,11 @@ let admin: Actor;
 let verifier: Actor;
 let modelId: string;
 
-async function cleanUp() {
-  const staff = await db.staffUser.findMany({
-    where: { email: { in: [ADMIN_EMAIL, VERIFIER_EMAIL] } },
-  });
-  // Seules les lignes d'audit écrites par les comptes de test sont retirées.
-  await db.auditLog.deleteMany({ where: { actorId: { in: staff.map((s) => s.id) } } });
-  await db.version.deleteMany({ where: { name: { startsWith: PREFIX, mode: "insensitive" } } });
-  await db.staffUser.deleteMany({ where: { email: { in: [ADMIN_EMAIL, VERIFIER_EMAIL] } } });
-}
-
 function versionByName(name: string) {
   return db.version.findFirstOrThrow({ where: { modelId, countryCode: "TN", name } });
 }
 
 beforeAll(async () => {
-  await cleanUp();
   const a = await db.staffUser.create({
     data: { email: ADMIN_EMAIL, name: "Test admin", role: "ADMIN" },
   });
@@ -48,7 +38,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await cleanUp();
   await db.$disconnect();
 });
 

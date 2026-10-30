@@ -20,6 +20,7 @@ export async function recordCompetitorPrice(
     url: string;
     versionId: string | null; // null : version pas encore créée (simulation)
     priceMinor: number;
+    currency: string; // ISO 4217, celle du pays de la version
     observedAt: Date;
     action: string;
     auditDetails: Prisma.InputJsonObject;
@@ -38,10 +39,10 @@ export async function recordCompetitorPrice(
       observedAt: input.observedAt,
     },
     orderBy: { createdAt: "asc" },
-    select: { id: true, priceMinor: true },
+    select: { id: true, priceMinor: true, currency: true },
   });
   if (existing) {
-    return existing.priceMinor === input.priceMinor
+    return existing.priceMinor === input.priceMinor && existing.currency === input.currency
       ? { status: "existing", observationId: existing.id }
       : { status: "conflict", observationId: existing.id, priceMinor: existing.priceMinor };
   }
@@ -53,6 +54,7 @@ export async function recordCompetitorPrice(
       url: input.url,
       versionId: input.versionId,
       priceMinor: input.priceMinor,
+      currency: input.currency,
       status: "NOT_SHOWN",
       observedAt: input.observedAt,
       observerId: null,
@@ -69,6 +71,7 @@ export async function recordCompetitorPrice(
       url: created.url,
       versionId: created.versionId,
       priceMinor: created.priceMinor,
+      currency: created.currency,
       status: created.status,
       observedAt: created.observedAt.toISOString(),
       ...input.auditDetails,

@@ -37,6 +37,22 @@ Les documents de référence (spécification, protocole du test de la donnée, m
 - IA : passerelle unique dans `src/lib/llm/`, compatible OpenAI. Modèle principal `claude-haiku-5-5` (API Anthropic) ; repli automatique sur AI Forge (endpoint compatible OpenAI, variables `LLM_FALLBACK_*`) en cas de panne, de quota ou de budget dépassé.
 - Python : uniquement dans `workers/python/` pour l'OCR et les traitements lourds, en tâches Cloud Run Jobs qui lisent et écrivent dans la base. Tout le reste en TypeScript.
 
+## Fondations (invariants de choofauto)
+
+Périmètre : un seul produit, choofauto, en Tunisie. Aucune abstraction générique pour un autre produit ou un autre pays ; on ne généralise qu'à partir de trois cas réels. Si un invariant dégrade une fonctionnalité visible par l'usager, la fonctionnalité gagne et l'exception est consignée dans docs/DECISIONS.md.
+
+F1. Identifiants et montants. Toute clé primaire est un UUID, en version 7 pour les journaux et les nouvelles tables ; aucun compteur séquentiel. Tout montant est un entier dans la plus petite unité de sa devise (millimes), accompagné d'une colonne currency (ISO 4217) ; jamais de flottant ni de décimal ; formatage par src/lib/money.ts uniquement.
+
+F2. Données personnelles des usagers. Aucun compte usager avant la première demande envoyée à un professionnel. Les données identifiantes des usagers (nom, téléphone, e-mail, adresse) ne vivent que dans le coffre d'identité hébergé en Tunisie ; l'application ne manipule qu'un identifiant pseudonyme. Chaque accès au coffre déclare une finalité, et le consentement est enregistré par finalité avec la version du texte accepté. Hors champ : les adresses de connexion du personnel (StaffUser) et les coordonnées professionnelles des showrooms (ProSite).
+
+F3. Journaux en ajout seul. AuditLog, Event et les tables obs_* sont en ajout seul : la base refuse UPDATE et DELETE par des déclencheurs ; une correction est une nouvelle ligne. Les événements usagers sont nommés par action métier et portent un identifiant pseudonyme ; les indicateurs hebdomadaires se calculent depuis ces journaux.
+
+F4. Référentiel et observations. Les tables catalog_* ne contiennent ni prix ni disponibilité. Prix et disponibilités vivent dans les observations obs_*, datées, sourcées et en ajout seul ; l'offre courante d'un showroom est une vue calculée, jamais une table modifiée sur place. Les adresses publiques sont un contrat : elles emploient les mots que cherchent les acheteurs, restent stables, et tout changement passe par une redirection permanente.
+
+F5. Règles, textes et sens d'écriture. Aucun paramètre fiscal ou légal dans le code : ils vivent dans RegulatoryRule, datés et validés ; le simulateur est une fonction pure de ces paramètres. Aucun texte visible en dur : tout passe par src/lib/i18n. Le CSS utilise les propriétés logiques (margin-inline-start, padding-inline-end, text-align: start, inset-inline-start), jamais left ni right ; l'attribut dir vient de la langue.
+
+Vérification : pnpm check:foundations, lancé aussi par l'intégration continue.
+
 ## Arborescence cible
 
 ```

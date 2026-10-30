@@ -2,9 +2,9 @@ import { readFile } from "node:fs/promises";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { dinarsToMillimes } from "@/lib/money";
-import { ensureImportedVersion, findPilotModelByRank } from "@/modules/catalog";
+import { ensureImportedVersion, findPilotModelByRank, PILOT_COUNTRY } from "@/modules/catalog";
 import { recordCompetitorPrice } from "@/modules/observations";
-import { checkLocalDatabase } from "./guard";
+import { checkLocalDatabase } from "../lib/local-database";
 import { COMPETITOR, describeIssues, fileSchema, rowSchema, type ImportRow } from "./schema";
 
 // Import, en base locale seulement, des versions relevées sur automobile.tn (tâche 2.1 bis).
@@ -49,6 +49,11 @@ export async function runImport(options: {
   }
   const { observedAt: day, rows, missing } = file.data;
   const observedAt = new Date(`${day}T00:00:00.000Z`);
+  // Devise des prix affichés : celle du pays des versions créées.
+  const { currency } = await db.country.findUniqueOrThrow({
+    where: { code: PILOT_COUNTRY },
+    select: { currency: true },
+  });
   const write = !options.dryRun;
 
   const report: ImportReport = {
@@ -83,7 +88,7 @@ export async function runImport(options: {
     seen.set(key, line);
 
     try {
-      await importRow(row, line, observedAt, write, report);
+      await importRow(row, line, { observedAt, currency }, write, report);
     } catch (error) {
       const code = error instanceof Prisma.PrismaClientKnownRequestError ? ` ${error.code}` : "";
       report.ignored.push({ line, reason: `erreur de base${code}, ligne non importée` });
@@ -123,7 +128,7 @@ type RowOutcome = Pick<
 async function importRow(
   row: ImportRow,
   line: number,
-  observedAt: Date,
+  { observedAt, currency }: { observedAt: Date; currency: string },
   write: boolean,
   report: ImportReport,
 ) {
@@ -173,6 +178,7 @@ async function importRow(
         url: row.url,
         versionId: version.status === "wouldCreate" ? null : version.versionId,
         priceMinor,
+        currency,
         observedAt,
         action: ACTION_OBSERVATION,
         auditDetails: { siteLabel: row.siteLabel, priceDt: row.priceDt },

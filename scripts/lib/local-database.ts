@@ -1,4 +1,4 @@
-// Garde-fou : l'import des versions trouvées sur le web ne vise que la base locale de développement.
+// Garde-fou : les scripts qui écrivent en base (import, base de test) ne visent que la base locale.
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const LOCAL_PORT = "5434"; // voir docker-compose.yml

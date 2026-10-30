@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { ACTION_OBSERVATION, ACTION_VERSION, runImport } from "../../scripts/import-web/import";
 
-// Jeu de données fictif uniquement : le vrai fichier ne sert jamais aux tests.
+// Jeu de données fictif uniquement : le vrai fichier ne sert jamais aux tests. La base de test est
+// recréée à chaque lancement de pnpm test:db : rien à effacer.
 const FILE = "tests/db/fixtures/versions_web.fictif.json";
 const PREFIX = "Test import";
 const OBSERVED_AT = new Date("2026-01-15T00:00:00.000Z");
@@ -14,17 +15,6 @@ function testVersions() {
   });
 }
 
-// Retire les versions fictives, leurs observations et les lignes d'audit de l'import qui les visent.
-async function cleanUp() {
-  const ids = (await testVersions()).map((v) => v.id);
-  const obs = await db.competitorObservation.findMany({ where: { versionId: { in: ids } } });
-  await db.auditLog.deleteMany({
-    where: { actorId: null, entityId: { in: [...ids, ...obs.map((o) => o.id)] } },
-  });
-  await db.competitorObservation.deleteMany({ where: { versionId: { in: ids } } });
-  await db.version.deleteMany({ where: { id: { in: ids } } });
-}
-
 // Lignes d'audit écrites par l'import (les autres fichiers de test tournent en parallèle).
 function importAuditCount() {
   return db.auditLog.count({
@@ -32,10 +22,7 @@ function importAuditCount() {
   });
 }
 
-beforeAll(cleanUp);
-
 afterAll(async () => {
-  await cleanUp();
   await db.$disconnect();
 });
 
@@ -109,6 +96,7 @@ describe("import des versions trouvées sur le web", () => {
       competitor: "automobile.tn",
       url: "https://www.automobile.tn/fr/neuf/test/alpha",
       priceMinor: 11_111_000,
+      currency: "TND",
       status: "NOT_SHOWN",
       observedAt: OBSERVED_AT,
       observerId: null,

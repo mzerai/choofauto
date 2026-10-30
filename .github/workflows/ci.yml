@@ -7,7 +7,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    # Base temporaire, détruite à la fin du job, pour les migrations, le seed et pnpm test:db.
+    # Serveur temporaire, détruit à la fin du job ; pnpm test:db y crée la base choofauto_test.
     services:
       db:
         image: pgvector/pgvector:pg16
@@ -41,10 +41,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm check:foundations
       - run: pnpm test
-      - run: pnpm exec prisma migrate deploy
-      # Deux passages : le second ne doit créer aucun doublon, ce que vérifie pnpm test:db.
-      - run: pnpm db:seed
-      - run: pnpm db:seed
+      # Recrée la base choofauto_test sur le même serveur : migrations, deux passages du seed
+      # (le second ne doit créer aucun doublon), puis les tests qui interrogent la base.
       - run: pnpm test:db
       - run: pnpm build
