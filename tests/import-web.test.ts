@@ -31,6 +31,20 @@ describe("garde-fou de la base locale", () => {
     expect(checkLocalDatabase({ DATABASE_URL: LOCAL, NODE_ENV: "production" }).ok).toBe(false);
   });
 
+  it("donne un motif court, que le script préfixe une seule fois par « Import refusé : »", () => {
+    const production = checkLocalDatabase({ DATABASE_URL: LOCAL, NODE_ENV: "production" });
+    expect(production).toEqual({ ok: false, reason: "NODE_ENV vaut production." });
+    const remote = checkLocalDatabase({ DATABASE_URL: LOCAL.replace("localhost", "10.0.0.5") });
+    expect(remote).toEqual({
+      ok: false,
+      reason: "DATABASE_URL ne vise pas la base locale (localhost).",
+    });
+    for (const env of [{}, { DATABASE_URL: "x" }, { DATABASE_URL: LOCAL.replace("5434", "1") }]) {
+      const result = checkLocalDatabase(env);
+      if (!result.ok) expect(result.reason).not.toMatch(/refus/i);
+    }
+  });
+
   it("ne recopie jamais l'adresse, qui peut contenir un mot de passe", () => {
     const result = checkLocalDatabase({
       DATABASE_URL: "postgresql://u:secret@db.example.com:5432/x",

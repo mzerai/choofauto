@@ -7,7 +7,7 @@ export type GuardResult = { ok: true } | { ok: false; reason: string };
 
 export function checkLocalDatabase(env: { DATABASE_URL?: string; NODE_ENV?: string }): GuardResult {
   if (env.NODE_ENV === "production") {
-    return { ok: false, reason: "NODE_ENV vaut production : import refusé." };
+    return { ok: false, reason: "NODE_ENV vaut production." };
   }
   if (!env.DATABASE_URL) return { ok: false, reason: "DATABASE_URL n'est pas définie." };
   let url: URL;

@@ -45,7 +45,7 @@ export async function runImport(options: {
   }
   const file = fileSchema.safeParse(raw);
   if (!file.success) {
-    return { ok: false, reason: `Structure du fichier refusée (${describeIssues(file.error)}).` };
+    return { ok: false, reason: `Structure du fichier invalide (${describeIssues(file.error)}).` };
   }
   const { observedAt: day, rows, missing } = file.data;
   const observedAt = new Date(`${day}T00:00:00.000Z`);
