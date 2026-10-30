@@ -1,0 +1,55 @@
+{
+  "source": "Jeu de données fictif pour les tests : aucun prix réel.",
+  "observedAt": "2026-01-15",
+  "rows": [
+    {
+      "pilotRank": 1,
+      "versionName": "Test import Alpha",
+      "siteLabel": "Libellé fictif Alpha",
+      "isPopularCar": true,
+      "priceDt": 11111,
+      "url": "https://www.automobile.tn/fr/neuf/test/alpha"
+    },
+    {
+      "pilotRank": 1,
+      "versionName": "Test import Beta",
+      "siteLabel": "Libellé fictif Beta",
+      "isPopularCar": false,
+      "priceDt": 22222,
+      "url": "https://www.automobile.tn/fr/neuf/test/beta"
+    },
+    {
+      "pilotRank": 2,
+      "versionName": "Test import Gamma",
+      "siteLabel": "Libellé fictif Gamma",
+      "isPopularCar": false,
+      "priceDt": 33333,
+      "url": "https://www.automobile.tn/fr/neuf/test/gamma"
+    },
+    {
+      "pilotRank": 1,
+      "versionName": "  test IMPORT alpha ",
+      "siteLabel": "Doublon fictif",
+      "isPopularCar": true,
+      "priceDt": 11111,
+      "url": "https://www.automobile.tn/fr/neuf/test/alpha"
+    },
+    {
+      "pilotRank": 999,
+      "versionName": "Test import Hors pilote",
+      "siteLabel": "Rang inexistant",
+      "isPopularCar": false,
+      "priceDt": 44444,
+      "url": "https://www.automobile.tn/fr/neuf/test/hors"
+    },
+    {
+      "pilotRank": 2,
+      "versionName": "Test import Prix faux",
+      "siteLabel": "Prix à virgule",
+      "isPopularCar": false,
+      "priceDt": 12.5,
+      "url": "https://www.automobile.tn/fr/neuf/test/faux"
+    }
+  ],
+  "missing": [{ "pilotRank": 3, "reason": "Raison fictive de l’absence du rang 3." }]
+}

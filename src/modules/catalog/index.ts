@@ -1,5 +1,7 @@
 export {
   addVersion,
+  ensureImportedVersion,
+  findPilotModelByRank,
   listPilotModels,
   PILOT_COUNTRY,
   renameModel,
@@ -9,5 +11,7 @@ export {
   setVersionTracked,
   type CatalogError,
   type CatalogResult,
+  type ImportedVersion,
   type PilotModel,
 } from "./catalog";
+export { catalogNameSchema } from "./schemas";
