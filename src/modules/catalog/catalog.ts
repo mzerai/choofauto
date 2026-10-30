@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { canEditCatalog, type Actor } from "@/lib/permissions";
 import {
   addVersionSchema,
+  catalogNameSchema,
   renameModelSchema,
   renameVersionSchema,
   setModelStatusSchema,
@@ -280,4 +281,66 @@ export async function setModelStatus(actor: Actor, raw: unknown): Promise<Catalo
   return updateModel(actor, modelId, "catalog.model.status", async () => ({
     pilotStatus: status,
   }));
+}
+
+// ---------------------------------------------------------------- import depuis un script local
+
+// Modèle du pilote retrouvé par son rang, jamais par son nom.
+export async function findPilotModelByRank(tx: Prisma.TransactionClient, pilotRank: number) {
+  return tx.model.findUnique({
+    where: { pilotRank },
+    select: { id: true, name: true, brand: { select: { name: true } } },
+  });
+}
+
+export type ImportedVersion =
+  | { status: "existing"; versionId: string; isActive: boolean }
+  | { status: "created"; versionId: string }
+  | { status: "wouldCreate" };
+
+// Retrouve une version du pays par la règle de doublon du back-office, ou la crée si `write` est vrai :
+// non suivie, motorisation non renseignée. La ligne d'audit, sans acteur, porte l'action `action`.
+export async function ensureImportedVersion(
+  tx: Prisma.TransactionClient,
+  input: {
+    modelId: string;
+    name: string;
+    isPopularCar: boolean;
+    action: string;
+    auditDetails: Prisma.InputJsonObject;
+  },
+  write: boolean,
+): Promise<ImportedVersion> {
+  const name = catalogNameSchema.parse(input.name);
+  const existing = await tx.version.findFirst({
+    where: {
+      modelId: input.modelId,
+      countryCode: PILOT_COUNTRY,
+      name: { equals: name, mode: "insensitive" },
+    },
+    select: { id: true, isActive: true },
+  });
+  if (existing) return { status: "existing", versionId: existing.id, isActive: existing.isActive };
+  if (!write) return { status: "wouldCreate" };
+
+  const created = await tx.version.create({
+    data: {
+      modelId: input.modelId,
+      countryCode: PILOT_COUNTRY,
+      name,
+      powertrain: null,
+      isPopularCar: input.isPopularCar,
+      isTracked: false,
+    },
+    select: versionFields,
+  });
+  await writeAudit(tx, {
+    actorId: null,
+    action: input.action,
+    entity: "Version",
+    entityId: created.id,
+    before: null,
+    after: { ...created, ...input.auditDetails },
+  });
+  return { status: "created", versionId: created.id };
 }

@@ -5,7 +5,9 @@ import { z } from "zod";
 // texte pour les champs, "on" pour une case cochée, chaîne vide pour une liste non choisie.
 
 const id = z.uuid();
-const name = z.string().trim().min(1).max(80);
+// Règle commune des noms de modèle et de version, reprise par l'import des versions.
+export const catalogNameSchema = z.string().trim().min(1).max(80);
+const name = catalogNameSchema;
 const checkbox = z.preprocess((v) => v === "on" || v === "true" || v === true, z.boolean());
 const flag = z.enum(["true", "false"]).transform((v) => v === "true");
 

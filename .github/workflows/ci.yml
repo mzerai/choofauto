@@ -15,15 +15,16 @@ jobs:
           POSTGRES_USER: choofauto
           POSTGRES_PASSWORD: choofauto
           POSTGRES_DB: choofauto
+        # Même port qu'en local (décision 0012) : le garde-fou de l'import n'accepte que 5434.
         ports:
-          - 5432:5432
+          - 5434:5432
         options: >-
           --health-cmd "pg_isready -U choofauto"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://choofauto:choofauto@localhost:5432/choofauto?schema=public
+      DATABASE_URL: postgresql://choofauto:choofauto@localhost:5434/choofauto?schema=public
       # Adresses fictives (domaine réservé example.com) : les vraies ne quittent jamais .env.local.
       STAFF_EMAIL_ALLOWLIST: test.fondateur@example.com,test.cofondatrice@example.com
       # Valeur d'essai pour la construction, sans usage réel.

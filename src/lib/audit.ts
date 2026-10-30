@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 export type AuditEntry = {
-  actorId: string;
+  actorId: string | null; // null : écriture d'un script lancé en local, sans membre du personnel
   action: string; // ex. "catalog.version.create"
   entity: string; // ex. "Version"
   entityId: string;
