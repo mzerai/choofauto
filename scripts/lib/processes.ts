@@ -57,7 +57,7 @@ export function selectProjectNodeProcesses(
   projectRoot: string,
   excluded: Set<number>,
 ): ProcessInfo[] {
-  const root = normalize(resolve(projectRoot)).replace(/\\$/, "") + "\\";
+  const root = normalize(projectRoot).replace(/\\$/, "") + "\\";
   return all.filter((p) => {
     const name = p.name.toLowerCase();
     if (name !== "node.exe" && name !== "node") return false;
@@ -70,7 +70,7 @@ export function selectProjectNodeProcesses(
 
 export function findProjectNodeProcesses(projectRoot: string = process.cwd()): ProcessInfo[] {
   const all = listProcesses();
-  return selectProjectNodeProcesses(all, projectRoot, selfAndAncestors(all));
+  return selectProjectNodeProcesses(all, resolve(projectRoot), selfAndAncestors(all));
 }
 
 // Une ligne par programme : numéro et commande, raccourcie.
