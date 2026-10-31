@@ -7,16 +7,19 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "tsx scripts/predev.ts && prisma generate && next dev -p 3000",
+    "stop": "tsx scripts/stop.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:db": "vitest run --config vitest.db.config.mts",
+    "test:db": "tsx --env-file-if-exists=.env scripts/test-db.ts",
+    "check:foundations": "tsx scripts/check-foundations/cli.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "tsx --env-file-if-exists=.env scripts/db-migrate.ts",
+    "db:generate": "prisma generate",
     "db:seed": "tsx --env-file-if-exists=.env.local prisma/seed.ts",
     "data:import-web": "tsx --env-file-if-exists=.env scripts/import-web/cli.ts",
     "postinstall": "prisma generate"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkLocalDatabase } from "../scripts/import-web/guard";
+import { checkLocalDatabase } from "../scripts/lib/local-database";
 import { fileSchema, rowSchema } from "../scripts/import-web/schema";
 
 const LOCAL = "postgresql://choofauto:choofauto@localhost:5434/choofauto?schema=public";

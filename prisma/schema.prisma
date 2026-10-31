@@ -420,7 +420,8 @@ model CompetitorObservation {
   url        String?
   versionId  String           @db.Uuid
   version    Version          @relation(fields: [versionId], references: [id])
-  priceMinor Int?
+  priceMinor Int? // prix affiché par le concurrent, en unités mineures
+  currency   String           @db.Char(3) // ISO 4217
   status     CompetitorStatus
   observedAt DateTime
   observerId String?          @db.Uuid
@@ -527,7 +528,8 @@ model AgentRun {
   model        String?
   inputTokens  Int            @default(0)
   outputTokens Int            @default(0)
-  costMicroUsd Int            @default(0)
+  costMicroUsd Int            @default(0) // micro-dollars, plus fins que le cent : exception de la décision 0017
+  currency     String         @default("USD") @db.Char(3)
   plan         Json?
   error        String?
 
@@ -590,7 +592,7 @@ model RegulatoryRule {
 // ---------------------------------------------------------------- événements et audit
 
 model Event {
-  id          BigInt   @id @default(autoincrement())
+  id          String   @id @default(uuid(7)) @db.Uuid
   name        String // recherche_effectuee, fiche_vue, releve_saisi…
   subjectId   String? // identifiant pseudonyme, jamais un téléphone ni un nom
   countryCode String?  @db.Char(2)
@@ -602,7 +604,7 @@ model Event {
 }
 
 model AuditLog {
-  id       BigInt   @id @default(autoincrement())
+  id       String   @id @default(uuid(7)) @db.Uuid
   actorId  String?  @db.Uuid // membre du personnel
   action   String
   entity   String
